@@ -338,8 +338,52 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Datos estáticos (demo para GitHub Pages) ──────────────────────────
+const STATS = { total_usuarios: 20, usuarios_riesgo: 8, criticos: 3, alertas_pend: 7 };
+
+const USUARIOS = [
+  { id:1,  username:'Nk0_L33t',    nivel_riesgo:'critico', score_riesgo:97, estado:'activo',     ip_registro:'185.234.12.x', pais:'México',    sesiones:142, alertas:3 },
+  { id:2,  username:'Luna_Tomo',   nivel_riesgo:'critico', score_riesgo:94, estado:'activo',     ip_registro:'45.142.88.x',  pais:'Colombia',  sesiones:98,  alertas:2 },
+  { id:3,  username:'ProxyFox',    nivel_riesgo:'critico', score_riesgo:91, estado:'suspendido', ip_registro:'103.21.55.x',  pais:'Argentina', sesiones:76,  alertas:2 },
+  { id:4,  username:'TomoChan99',  nivel_riesgo:'alto',    score_riesgo:84, estado:'activo',     ip_registro:'201.19.44.x',  pais:'Panamá',    sesiones:38,  alertas:1 },
+  { id:5,  username:'Pachi_Zero',  nivel_riesgo:'alto',    score_riesgo:78, estado:'activo',     ip_registro:'98.45.22.x',   pais:'España',    sesiones:21,  alertas:1 },
+  { id:6,  username:'CloneWarz',   nivel_riesgo:'alto',    score_riesgo:72, estado:'activo',     ip_registro:'91.108.4.x',   pais:'México',    sesiones:44,  alertas:1 },
+  { id:7,  username:'MiiClone_X',  nivel_riesgo:'medio',   score_riesgo:61, estado:'activo',     ip_registro:'45.142.10.x',  pais:'Colombia',  sesiones:9,   alertas:1 },
+  { id:8,  username:'FriendBot3',  nivel_riesgo:'medio',   score_riesgo:58, estado:'activo',     ip_registro:'103.21.33.x',  pais:'Argentina', sesiones:17,  alertas:1 },
+  { id:9,  username:'ZeroPing_X',  nivel_riesgo:'medio',   score_riesgo:47, estado:'activo',     ip_registro:'185.22.11.x',  pais:'Panamá',    sesiones:12,  alertas:0 },
+  { id:10, username:'AutoPlay9',   nivel_riesgo:'medio',   score_riesgo:43, estado:'activo',     ip_registro:'91.55.44.x',   pais:'España',    sesiones:8,   alertas:0 },
+  { id:11, username:'Sakura_Mii',  nivel_riesgo:'normal',  score_riesgo:12, estado:'activo',     ip_registro:'191.100.55.x', pais:'Panamá',    sesiones:4,   alertas:0 },
+  { id:12, username:'HibachiGo',   nivel_riesgo:'normal',  score_riesgo:8,  estado:'activo',     ip_registro:'200.75.30.x',  pais:'México',    sesiones:2,   alertas:0 },
+  { id:13, username:'Gamer_Jose',  nivel_riesgo:'normal',  score_riesgo:6,  estado:'activo',     ip_registro:'201.44.12.x',  pais:'Colombia',  sesiones:7,   alertas:0 },
+  { id:14, username:'Ana_Plays',   nivel_riesgo:'normal',  score_riesgo:4,  estado:'activo',     ip_registro:'190.22.88.x',  pais:'Argentina', sesiones:5,   alertas:0 },
+  { id:15, username:'NormalUser1', nivel_riesgo:'normal',  score_riesgo:3,  estado:'activo',     ip_registro:'181.65.77.x',  pais:'España',    sesiones:3,   alertas:0 },
+];
+
+const ALERTAS = [
+  { username:'Nk0_L33t',   score_ia:97, tipo_amenaza:'bot_detectado',     nivel_riesgo:'critico', fecha_creacion:'2025-05-06 18:42' },
+  { username:'Luna_Tomo',  score_ia:94, tipo_amenaza:'velocidad_anomala',  nivel_riesgo:'critico', fecha_creacion:'2025-05-06 17:30' },
+  { username:'ProxyFox',   score_ia:91, tipo_amenaza:'ip_sospechosa',      nivel_riesgo:'critico', fecha_creacion:'2025-05-06 16:15' },
+  { username:'TomoChan99', score_ia:84, tipo_amenaza:'multicuenta',        nivel_riesgo:'alto',    fecha_creacion:'2025-05-06 15:00' },
+  { username:'Pachi_Zero', score_ia:78, tipo_amenaza:'velocidad_anomala',  nivel_riesgo:'alto',    fecha_creacion:'2025-05-06 14:20' },
+  { username:'CloneWarz',  score_ia:72, tipo_amenaza:'bot_detectado',      nivel_riesgo:'alto',    fecha_creacion:'2025-05-06 13:05' },
+  { username:'MiiClone_X', score_ia:61, tipo_amenaza:'ip_sospechosa',      nivel_riesgo:'medio',   fecha_creacion:'2025-05-06 11:44' },
+];
+
+const ACTIVIDAD = [
+  {hora:0,total:4,anomalias:1},{hora:1,total:2,anomalias:0},{hora:2,total:3,anomalias:1},
+  {hora:3,total:1,anomalias:0},{hora:4,total:2,anomalias:0},{hora:5,total:5,anomalias:2},
+  {hora:6,total:12,anomalias:4},{hora:7,total:18,anomalias:6},{hora:8,total:24,anomalias:8},
+  {hora:9,total:31,anomalias:11},{hora:10,total:28,anomalias:9},{hora:11,total:35,anomalias:13},
+  {hora:12,total:40,anomalias:15},{hora:13,total:38,anomalias:12},{hora:14,total:44,anomalias:17},
+  {hora:15,total:50,anomalias:21},{hora:16,total:47,anomalias:18},{hora:17,total:42,anomalias:14},
+  {hora:18,total:55,anomalias:24},{hora:19,total:60,anomalias:27},{hora:20,total:52,anomalias:20},
+  {hora:21,total:38,anomalias:12},{hora:22,total:22,anomalias:7},{hora:23,total:10,anomalias:3},
+];
+
+// ── Lógica del dashboard ──────────────────────────────────────────────
 let actChart, riskChart;
-let allUsers = [];
+let allUsers = [...USUARIOS];
+let usuariosBaneados = new Set();
 
 function showToast(msg, duration = 2500) {
   const t = document.getElementById('toast');
@@ -355,22 +399,21 @@ function scoreColor(s) {
   return 'var(--accent)';
 }
 
-async function loadStats() {
-  const r = await fetch('/api/stats');
-  const d = await r.json();
+function loadStats() {
+  const criticos = allUsers.filter(u => u.nivel_riesgo === 'critico' && !usuariosBaneados.has(u.id)).length;
+  const enRiesgo  = allUsers.filter(u => ['critico','alto'].includes(u.nivel_riesgo) && !usuariosBaneados.has(u.id)).length;
   document.getElementById('metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">Total usuarios</div><div class="metric-value blue">${d.total_usuarios}</div><div class="metric-delta">en base de datos</div></div>
-    <div class="metric"><div class="metric-label">En riesgo</div><div class="metric-value red">${d.usuarios_riesgo}</div><div class="metric-delta">alto + crítico</div></div>
-    <div class="metric"><div class="metric-label">Críticos</div><div class="metric-value yellow">${d.criticos}</div><div class="metric-delta">acción inmediata</div></div>
-    <div class="metric"><div class="metric-label">Alertas pendientes</div><div class="metric-value green">${d.alertas_pend}</div><div class="metric-delta">sin revisar</div></div>
+    <div class="metric"><div class="metric-label">Total usuarios</div><div class="metric-value blue">${STATS.total_usuarios}</div><div class="metric-delta">en base de datos</div></div>
+    <div class="metric"><div class="metric-label">En riesgo</div><div class="metric-value red">${enRiesgo}</div><div class="metric-delta">alto + crítico</div></div>
+    <div class="metric"><div class="metric-label">Críticos</div><div class="metric-value yellow">${criticos}</div><div class="metric-delta">acción inmediata</div></div>
+    <div class="metric"><div class="metric-label">Alertas pendientes</div><div class="metric-value green">${ALERTAS.length}</div><div class="metric-delta">sin revisar</div></div>
   `;
 }
 
-async function loadUsers(nivel = 'all') {
-  const r = await fetch(`/api/usuarios?nivel=${nivel}`);
-  allUsers = await r.json();
-  renderTable(allUsers);
-  renderRiskChart(allUsers);
+function loadUsers(nivel = 'all') {
+  const lista = nivel === 'all' ? allUsers : allUsers.filter(u => u.nivel_riesgo === nivel);
+  renderTable(lista);
+  renderRiskChart(lista.length ? lista : allUsers);
 }
 
 function renderTable(users) {
@@ -379,11 +422,14 @@ function renderTable(users) {
     tbody.innerHTML = '<tr><td colspan="7"><div class="empty">Sin usuarios en este nivel</div></td></tr>';
     return;
   }
-  tbody.innerHTML = users.map(u => `
+  tbody.innerHTML = users.map(u => {
+    const baneado = usuariosBaneados.has(u.id);
+    const estado  = baneado ? 'baneado' : u.estado;
+    return `
     <tr>
       <td>
         <div class="user-name">${u.username}</div>
-        <div class="user-country">${u.pais || '—'} · ${u.ip_registro}</div>
+        <div class="user-country">${u.pais} · ${u.ip_registro}</div>
       </td>
       <td><span class="badge badge-${u.nivel_riesgo}">${u.nivel_riesgo}</span></td>
       <td>
@@ -396,17 +442,17 @@ function renderTable(users) {
       </td>
       <td style="color:var(--muted)">${u.sesiones}</td>
       <td style="color:var(--muted)">${u.alertas}</td>
-      <td><span class="badge ${u.estado === 'baneado' ? 'badge-critico' : u.estado === 'suspendido' ? 'badge-alto' : 'badge-normal'}">${u.estado}</span></td>
+      <td><span class="badge ${estado === 'baneado' ? 'badge-critico' : estado === 'suspendido' ? 'badge-alto' : 'badge-normal'}">${estado}</span></td>
       <td>
         <div style="display:flex;gap:6px;">
-          ${u.estado !== 'baneado' && (u.nivel_riesgo === 'critico' || u.nivel_riesgo === 'alto') ?
+          ${!baneado && (u.nivel_riesgo === 'critico' || u.nivel_riesgo === 'alto') ?
             `<button class="btn btn-danger btn-sm" onclick="bloquear(${u.id},'${u.username}')">Bloquear</button>` : ''}
-          ${u.nivel_riesgo !== 'normal' ?
+          ${u.nivel_riesgo !== 'normal' && !baneado ?
             `<button class="btn btn-sm" onclick="falsopositivo(${u.id},'${u.username}')">FP</button>` : ''}
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 function filterUsers(nivel, btn) {
@@ -415,23 +461,21 @@ function filterUsers(nivel, btn) {
   loadUsers(nivel);
 }
 
-async function bloquear(id, name) {
-  await fetch(`/api/bloquear/${id}`, { method: 'POST' });
+function bloquear(id, name) {
+  usuariosBaneados.add(id);
   showToast(`✓ ${name} baneado correctamente`);
   loadAll();
 }
 
-async function falsopositivo(id, name) {
-  await fetch(`/api/falso-positivo/${id}`, { method: 'POST' });
+function falsopositivo(id, name) {
+  allUsers = allUsers.map(u => u.id === id ? {...u, nivel_riesgo:'normal', score_riesgo:0} : u);
   showToast(`○ ${name} marcado como falso positivo`);
   loadAll();
 }
 
-async function loadAlertas() {
-  const r = await fetch('/api/alertas');
-  const data = await r.json();
-  document.getElementById('alert-count').textContent = `${data.length} alertas`;
-  document.getElementById('alerts-list').innerHTML = data.slice(0, 8).map(a => `
+function loadAlertas() {
+  document.getElementById('alert-count').textContent = `${ALERTAS.length} alertas`;
+  document.getElementById('alerts-list').innerHTML = ALERTAS.slice(0, 8).map(a => `
     <div class="alert-item">
       <div class="alert-top">
         <span class="alert-user">${a.username}</span>
@@ -440,16 +484,14 @@ async function loadAlertas() {
       <div class="alert-type">${a.tipo_amenaza.replace(/_/g,' ')}</div>
       <div class="alert-date">${a.fecha_creacion} · <span class="badge badge-${a.nivel_riesgo}" style="font-size:9px;">${a.nivel_riesgo}</span></div>
     </div>
-  `).join('') || '<div class="empty">Sin alertas</div>';
+  `).join('');
 }
 
-async function loadActividad() {
-  const r = await fetch('/api/actividad');
-  const data = await r.json();
+function loadActividad() {
   const labels = Array.from({length:24}, (_,i) => i + ':00');
-  const totals = Array(24).fill(0);
+  const totals    = Array(24).fill(0);
   const anomalias = Array(24).fill(0);
-  data.forEach(d => { totals[d.hora] = d.total; anomalias[d.hora] = d.anomalias || 0; });
+  ACTIVIDAD.forEach(d => { totals[d.hora] = d.total; anomalias[d.hora] = d.anomalias; });
 
   if (actChart) actChart.destroy();
   actChart = new Chart(document.getElementById('actChart'), {
@@ -457,49 +499,51 @@ async function loadActividad() {
     data: {
       labels,
       datasets: [
-        { label: 'Eventos totales', data: totals, borderColor: 'rgba(61,139,255,0.7)', backgroundColor: 'rgba(61,139,255,0.06)', tension: 0.4, fill: true, pointRadius: 0 },
-        { label: 'Anomalías', data: anomalias, borderColor: 'rgba(255,71,87,0.9)', backgroundColor: 'rgba(255,71,87,0.08)', tension: 0.4, fill: true, pointRadius: 0 },
+        { label:'Eventos totales', data:totals,    borderColor:'rgba(61,139,255,0.7)',  backgroundColor:'rgba(61,139,255,0.06)',  tension:0.4, fill:true, pointRadius:0 },
+        { label:'Anomalías',       data:anomalias, borderColor:'rgba(255,71,87,0.9)',   backgroundColor:'rgba(255,71,87,0.08)',   tension:0.4, fill:true, pointRadius:0 },
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#6b7280', font: { size: 11 }, boxWidth: 10 } } },
-      scales: {
-        x: { ticks: { color: '#6b7280', font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#6b7280', font:{size:11}, boxWidth:10 } } },
+      scales:{
+        x:{ ticks:{color:'#6b7280',font:{size:10},maxTicksLimit:8}, grid:{color:'rgba(255,255,255,0.04)'} },
+        y:{ ticks:{color:'#6b7280',font:{size:10}}, grid:{color:'rgba(255,255,255,0.04)'}, beginAtZero:true }
       }
     }
   });
 }
 
 function renderRiskChart(users) {
-  const counts = { critico: 0, alto: 0, medio: 0, normal: 0 };
-  users.forEach(u => counts[u.nivel_riesgo] = (counts[u.nivel_riesgo] || 0) + 1);
+  const counts = { critico:0, alto:0, medio:0, normal:0 };
+  users.forEach(u => { if (!usuariosBaneados.has(u.id)) counts[u.nivel_riesgo]++; });
   if (riskChart) riskChart.destroy();
   riskChart = new Chart(document.getElementById('riskChart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Crítico', 'Alto', 'Medio', 'Normal'],
-      datasets: [{ data: [counts.critico, counts.alto, counts.medio, counts.normal],
-        backgroundColor: ['rgba(255,71,87,0.85)', 'rgba(255,165,2,0.85)', 'rgba(61,139,255,0.85)', 'rgba(0,229,160,0.85)'],
-        borderWidth: 0, hoverOffset: 4 }]
+    type:'doughnut',
+    data:{
+      labels:['Crítico','Alto','Medio','Normal'],
+      datasets:[{ data:[counts.critico,counts.alto,counts.medio,counts.normal],
+        backgroundColor:['rgba(255,71,87,0.85)','rgba(255,165,2,0.85)','rgba(61,139,255,0.85)','rgba(0,229,160,0.85)'],
+        borderWidth:0, hoverOffset:4 }]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '68%',
-      plugins: { legend: { position: 'bottom', labels: { color: '#6b7280', font: { size: 11 }, boxWidth: 10, padding: 12 } } }
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{ legend:{ position:'bottom', labels:{color:'#6b7280',font:{size:11},boxWidth:10,padding:12} } }
     }
   });
 }
 
-async function loadAll() {
+function loadAll() {
   const now = new Date();
   document.getElementById('last-update').textContent =
     `Actualizado · ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
-  await Promise.all([loadStats(), loadUsers(), loadAlertas(), loadActividad()]);
+  loadStats();
+  loadUsers();
+  loadAlertas();
+  loadActividad();
 }
 
 loadAll();
-setInterval(loadAll, 60000);
 </script>
 </body>
 </html>
