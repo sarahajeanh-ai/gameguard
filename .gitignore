@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+
+# Credentials — NEVER commit these
+DB.py.local
+config.py
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
