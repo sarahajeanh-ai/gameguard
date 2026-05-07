@@ -111,14 +111,6 @@ python DB.py
 
 This generates 20 simulated users with sessions, behavioral events, and AI-generated risk alerts.
 
-### 6. Run the server
-
-```bash
-python app.py
-```
-
-Open your browser at **https://sarahajeanh-ai.github.io/gameguard/**
-
 ---
 
 ## API Endpoints
