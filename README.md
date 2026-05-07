@@ -114,10 +114,10 @@ This generates 20 simulated users with sessions, behavioral events, and AI-gener
 ### 6. Run the server
 
 ```bash
-https://sarahajeanh-ai.github.io/gameguard/
+python app.py
 ```
 
-Open your browser at **http://localhost:5000**
+Open your browser at **https://sarahajeanh-ai.github.io/gameguard/**
 
 ---
 
