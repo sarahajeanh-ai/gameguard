@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GameGuard AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:        #0a0c0f;
+    --surface:   #111318;
+    --surface2:  #181c22;
+    --border:    rgba(255,255,255,0.07);
+    --border2:   rgba(255,255,255,0.12);
+    --text:      #e8eaf0;
+    --muted:     #6b7280;
+    --accent:    #00e5a0;
+    --accent2:   #00b37d;
+    --danger:    #ff4757;
+    --warning:   #ffa502;
+    --info:      #3d8bff;
+    --mono:      'Space Mono', monospace;
+    --sans:      'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
+
+  /* ── Layout ── */
+  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 0;
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .logo-name { font-size: 18px; font-weight: 600; color: var(--text); }
+  .logo-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .nav { padding: 16px 12px; flex: 1; }
+  .nav-label { font-size: 10px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; padding: 0 8px; margin-bottom: 6px; margin-top: 16px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 8px;
+    cursor: pointer; font-size: 13px; color: var(--muted);
+    transition: all 0.15s; margin-bottom: 2px;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(0,229,160,0.08); color: var(--accent); border-color: rgba(0,229,160,0.2); }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--muted);
+    font-family: var(--mono);
+  }
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── Main ── */
+  .main { padding: 28px 32px; overflow-x: hidden; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .page-title { font-size: 22px; font-weight: 600; }
+  .page-sub { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+  .topbar-actions { display: flex; gap: 10px; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border2);
+    background: var(--surface2); color: var(--text);
+    font-size: 12px; font-family: var(--sans); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--border2); background: rgba(255,255,255,0.06); }
+  .btn-accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .btn-accent:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn-danger { background: rgba(255,71,87,0.1); color: var(--danger); border-color: rgba(255,71,87,0.3); }
+  .btn-danger:hover { background: rgba(255,71,87,0.2); }
+  .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+
+  /* ── Metrics ── */
+  .metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+  .metric {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    transition: border-color 0.2s;
+  }
+  .metric:hover { border-color: var(--border2); }
+  .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .metric-value { font-size: 28px; font-weight: 600; font-family: var(--mono); }
+  .metric-value.green  { color: var(--accent); }
+  .metric-value.red    { color: var(--danger); }
+  .metric-value.yellow { color: var(--warning); }
+  .metric-value.blue   { color: var(--info); }
+  .metric-delta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Grid de contenido ── */
+  .content-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+  }
+  .card-title { font-size: 13px; font-weight: 600; }
+  .card-body { padding: 20px; }
+
+  /* ── Tabla ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 14px;
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    font-weight: 500; white-space: nowrap;
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .user-name { font-weight: 500; font-family: var(--mono); font-size: 12px; }
+  .user-country { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+  .badge-critico { background: rgba(255,71,87,0.15);  color: var(--danger);  border: 1px solid rgba(255,71,87,0.3); }
+  .badge-alto    { background: rgba(255,165,2,0.12);  color: var(--warning); border: 1px solid rgba(255,165,2,0.3); }
+  .badge-medio   { background: rgba(61,139,255,0.12); color: var(--info);    border: 1px solid rgba(61,139,255,0.3); }
+  .badge-normal  { background: rgba(0,229,160,0.1);   color: var(--accent);  border: 1px solid rgba(0,229,160,0.2); }
+
+  /* ── Score bar ── */
+  .score-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-num { font-family: var(--mono); font-size: 12px; min-width: 28px; }
+  .score-track { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; min-width: 60px; }
+  .score-fill  { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
+  /* ── Sidebar derecha ── */
+  .right-col { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── Alertas ── */
+  .alert-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s;
+  }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-item:hover { background: rgba(255,255,255,0.02); }
+  .alert-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .alert-user { font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .alert-score { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+  .alert-score.high { color: var(--danger); }
+  .alert-score.mid  { color: var(--warning); }
+  .alert-type { font-size: 11px; color: var(--muted); }
+  .alert-date { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Filtros ── */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 11px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--muted); cursor: pointer; transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.08); }
+
+  /* ── Chart ── */
+  .chart-wrap { position: relative; height: 180px; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); padding: 12px 18px; border-radius: 10px;
+    font-size: 13px; display: none; z-index: 999;
+    animation: slideUp 0.3s ease;
+  }
+  .toast.show { display: block; }
+  @keyframes slideUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+  /* ── Loading ── */
+  .skeleton { background: linear-gradient(90deg, var(--surface2) 25%, rgba(255,255,255,0.04) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 4px; }
+  @keyframes shimmer { 0%{background-position:200%} 100%{background-position:-200%} }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">// GameGuard</div>
+      <div class="logo-name">Threat Center</div>
+      <div class="logo-sub">Sistema de detección IA</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item active"><span class="nav-icon">◈</span> Dashboard</div>
+      <div class="nav-item"><span class="nav-icon">◎</span> Usuarios</div>
+      <div class="nav-item"><span class="nav-icon">△</span> Alertas</div>
+
+      <div class="nav-label">Análisis</div>
+      <div class="nav-item"><span class="nav-icon">◇</span> Comportamiento</div>
+      <div class="nav-item"><span class="nav-icon">○</span> IPs en riesgo</div>
+
+      <div class="nav-label">Sistema</div>
+      <div class="nav-item"><span class="nav-icon">⬡</span> Configuración</div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="status-dot"></span>IA activa · v1.0.0
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title">Panel de amenazas</div>
+        <div class="page-sub" id="last-update">Cargando datos...</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn" onclick="loadAll()">↺ Actualizar</button>
+        <button class="btn btn-accent" onclick="showToast('Exportando reporte...')">↗ Exportar</button>
+      </div>
+    </div>
+
+    <!-- Métricas -->
+    <div class="metrics" id="metrics">
+      <div class="metric"><div class="metric-label">Total usuarios</div><div class="metric-value blue skeleton" style="height:32px;width:60px;"></div></div>
+      <div class="metric"><div class="metric-label">En riesgo</div><div class="metric-value red skeleton" style="height:32px;width:60px;"></div></div>
+      <div class="metric"><div class="metric-label">Críticos</div><div class="metric-value yellow skeleton" style="height:32px;width:60px;"></div></div>
+      <div class="metric"><div class="metric-label">Alertas pendientes</div><div class="metric-value green skeleton" style="height:32px;width:60px;"></div></div>
+    </div>
+
+    <div class="content-grid">
+
+      <!-- Tabla de usuarios -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Usuarios monitoreados</span>
+            <div class="filters" id="filters">
+              <button class="filter-btn active" onclick="filterUsers('all',this)">Todos</button>
+              <button class="filter-btn" onclick="filterUsers('critico',this)">Crítico</button>
+              <button class="filter-btn" onclick="filterUsers('alto',this)">Alto</button>
+              <button class="filter-btn" onclick="filterUsers('medio',this)">Medio</button>
+              <button class="filter-btn" onclick="filterUsers('normal',this)">Normal</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Nivel</th>
+                  <th>Score IA</th>
+                  <th>Sesiones</th>
+                  <th>Alertas</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="user-table">
+                <tr><td colspan="7"><div class="skeleton" style="height:40px;margin:8px 0;border-radius:6px;"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Gráfica de actividad -->
+        <div class="card" style="margin-top:20px;">
+          <div class="card-header">
+            <span class="card-title">Actividad sospechosa por hora</span>
+            <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">últimos 7 días</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap">
+              <canvas id="actChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna derecha -->
+      <div class="right-col">
+
+        <!-- Alertas recientes -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Alertas recientes</span>
+            <span id="alert-count" style="font-size:11px;color:var(--muted);"></span>
+          </div>
+          <div id="alerts-list">
+            <div class="alert-item skeleton" style="height:60px;"></div>
+          </div>
+        </div>
+
+        <!-- Mini resumen -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Distribución de riesgo</span></div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:160px;">
+              <canvas id="riskChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let actChart, riskChart;
+let allUsers = [];
+
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function scoreColor(s) {
+  if (s >= 80) return 'var(--danger)';
+  if (s >= 60) return 'var(--warning)';
+  if (s >= 40) return 'var(--info)';
+  return 'var(--accent)';
+}
+
+async function loadStats() {
+  const r = await fetch('/api/stats');
+  const d = await r.json();
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Total usuarios</div><div class="metric-value blue">${d.total_usuarios}</div><div class="metric-delta">en base de datos</div></div>
+    <div class="metric"><div class="metric-label">En riesgo</div><div class="metric-value red">${d.usuarios_riesgo}</div><div class="metric-delta">alto + crítico</div></div>
+    <div class="metric"><div class="metric-label">Críticos</div><div class="metric-value yellow">${d.criticos}</div><div class="metric-delta">acción inmediata</div></div>
+    <div class="metric"><div class="metric-label">Alertas pendientes</div><div class="metric-value green">${d.alertas_pend}</div><div class="metric-delta">sin revisar</div></div>
+  `;
+}
+
+async function loadUsers(nivel = 'all') {
+  const r = await fetch(`/api/usuarios?nivel=${nivel}`);
+  allUsers = await r.json();
+  renderTable(allUsers);
+  renderRiskChart(allUsers);
+}
+
+function renderTable(users) {
+  const tbody = document.getElementById('user-table');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty">Sin usuarios en este nivel</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>
+        <div class="user-name">${u.username}</div>
+        <div class="user-country">${u.pais || '—'} · ${u.ip_registro}</div>
+      </td>
+      <td><span class="badge badge-${u.nivel_riesgo}">${u.nivel_riesgo}</span></td>
+      <td>
+        <div class="score-wrap">
+          <span class="score-num" style="color:${scoreColor(u.score_riesgo)}">${Math.round(u.score_riesgo)}</span>
+          <div class="score-track">
+            <div class="score-fill" style="width:${u.score_riesgo}%;background:${scoreColor(u.score_riesgo)}"></div>
+          </div>
+        </div>
+      </td>
+      <td style="color:var(--muted)">${u.sesiones}</td>
+      <td style="color:var(--muted)">${u.alertas}</td>
+      <td><span class="badge ${u.estado === 'baneado' ? 'badge-critico' : u.estado === 'suspendido' ? 'badge-alto' : 'badge-normal'}">${u.estado}</span></td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          ${u.estado !== 'baneado' && (u.nivel_riesgo === 'critico' || u.nivel_riesgo === 'alto') ?
+            `<button class="btn btn-danger btn-sm" onclick="bloquear(${u.id},'${u.username}')">Bloquear</button>` : ''}
+          ${u.nivel_riesgo !== 'normal' ?
+            `<button class="btn btn-sm" onclick="falsopositivo(${u.id},'${u.username}')">FP</button>` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterUsers(nivel, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadUsers(nivel);
+}
+
+async function bloquear(id, name) {
+  await fetch(`/api/bloquear/${id}`, { method: 'POST' });
+  showToast(`✓ ${name} baneado correctamente`);
+  loadAll();
+}
+
+async function falsopositivo(id, name) {
+  await fetch(`/api/falso-positivo/${id}`, { method: 'POST' });
+  showToast(`○ ${name} marcado como falso positivo`);
+  loadAll();
+}
+
+async function loadAlertas() {
+  const r = await fetch('/api/alertas');
+  const data = await r.json();
+  document.getElementById('alert-count').textContent = `${data.length} alertas`;
+  document.getElementById('alerts-list').innerHTML = data.slice(0, 8).map(a => `
+    <div class="alert-item">
+      <div class="alert-top">
+        <span class="alert-user">${a.username}</span>
+        <span class="alert-score ${a.score_ia >= 70 ? 'high' : 'mid'}">${Math.round(a.score_ia)}</span>
+      </div>
+      <div class="alert-type">${a.tipo_amenaza.replace(/_/g,' ')}</div>
+      <div class="alert-date">${a.fecha_creacion} · <span class="badge badge-${a.nivel_riesgo}" style="font-size:9px;">${a.nivel_riesgo}</span></div>
+    </div>
+  `).join('') || '<div class="empty">Sin alertas</div>';
+}
+
+async function loadActividad() {
+  const r = await fetch('/api/actividad');
+  const data = await r.json();
+  const labels = Array.from({length:24}, (_,i) => i + ':00');
+  const totals = Array(24).fill(0);
+  const anomalias = Array(24).fill(0);
+  data.forEach(d => { totals[d.hora] = d.total; anomalias[d.hora] = d.anomalias || 0; });
+
+  if (actChart) actChart.destroy();
+  actChart = new Chart(document.getElementById('actChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Eventos totales', data: totals, borderColor: 'rgba(61,139,255,0.7)', backgroundColor: 'rgba(61,139,255,0.06)', tension: 0.4, fill: true, pointRadius: 0 },
+        { label: 'Anomalías', data: anomalias, borderColor: 'rgba(255,71,87,0.9)', backgroundColor: 'rgba(255,71,87,0.08)', tension: 0.4, fill: true, pointRadius: 0 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#6b7280', font: { size: 11 }, boxWidth: 10 } } },
+      scales: {
+        x: { ticks: { color: '#6b7280', font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderRiskChart(users) {
+  const counts = { critico: 0, alto: 0, medio: 0, normal: 0 };
+  users.forEach(u => counts[u.nivel_riesgo] = (counts[u.nivel_riesgo] || 0) + 1);
+  if (riskChart) riskChart.destroy();
+  riskChart = new Chart(document.getElementById('riskChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Crítico', 'Alto', 'Medio', 'Normal'],
+      datasets: [{ data: [counts.critico, counts.alto, counts.medio, counts.normal],
+        backgroundColor: ['rgba(255,71,87,0.85)', 'rgba(255,165,2,0.85)', 'rgba(61,139,255,0.85)', 'rgba(0,229,160,0.85)'],
+        borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { position: 'bottom', labels: { color: '#6b7280', font: { size: 11 }, boxWidth: 10, padding: 12 } } }
+    }
+  });
+}
+
+async function loadAll() {
+  const now = new Date();
+  document.getElementById('last-update').textContent =
+    `Actualizado · ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  await Promise.all([loadStats(), loadUsers(), loadAlertas(), loadActividad()]);
+}
+
+loadAll();
+setInterval(loadAll, 60000);
+</script>
+</body>
+</html>
